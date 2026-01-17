@@ -1,0 +1,51 @@
+{
+  "TranslationProperties": {
+    "Name": "Gravestone",
+    "Description": "Gravestone"
+  },
+  "PlayerAnimationsId": "Block",
+  "Categories": [
+    "Furniture.Containers"
+  ],
+  "Icon": "Icons/ItemsGenerated/Gravestone.png",
+  "BlockType": {
+    "Material": "Empty",
+    "Opacity": "Transparent",
+    "DrawType": "Model",
+    "State": {
+      "Id": "Gravestone",
+      "Capacity": 1
+    },
+    "VariantRotation": "NESW",
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Rocks",
+        "ItemId": "Gravestone"
+      }
+    },
+    "CustomModel": "Blocks/Gravestone/Gravestone.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/Gravestone/Gravestone.png",
+        "Weight": 1
+      }
+    ],
+    "Interactions": {
+      "Primary": "Break_Container",
+      "Use": "Open_Container"
+    },
+    "CubeShadingMode": "Fullbright"
+  },
+  "IconProperties": {
+    "Scale": 0.55,
+    "Rotation": [
+      22.5,
+      45,
+      22.5
+    ],
+    "Translation": [
+      0,
+      -15
+    ]
+  }
+}

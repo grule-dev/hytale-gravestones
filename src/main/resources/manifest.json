@@ -1,0 +1,19 @@
+{
+  "Group": "Grule",
+  "Name": "Gravestones",
+  "Version": "1.0.0",
+  "Description": "A gravestones mod for Hytale",
+  "Authors": [
+    {
+      "Name": "Grule",
+      "Url": "https://github.com/grule-dev"
+    }
+  ],
+  "Website": "https://github.com/grule-dev/hytale-gravestones",
+  "Main": "com.github.grule.gravestones.Gravestones",
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "IncludesAssetPack": true,
+  "DisabledByDefault": false
+}
