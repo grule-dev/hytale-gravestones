@@ -287,7 +287,7 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
         }
 
         // Max 63 slots, otherwise the UI will overflow the screen
-        gravestoneState.setDynamicCapacity((short) Math.min(4, itemCount));
+        gravestoneState.setDynamicCapacity((short) Math.min(63, itemCount));
 
         // Store items in the gravestone
         ItemContainer container = gravestoneState.getItemContainer();

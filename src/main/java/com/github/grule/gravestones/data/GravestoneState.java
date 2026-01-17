@@ -299,6 +299,11 @@ public class GravestoneState extends ItemContainerState
         var player = playerRef.getStore().getComponent(playerRef, Player.getComponentType());
         assert player != null;
 
+        if (this.itemContainer != null && !this.itemContainer.isEmpty() && canDestroy && this.itemContainer.countItemStacks(item -> !item.isEmpty()) != 0) {
+            player.sendMessage(Message.raw("This gravestone is not empty!"));
+            return false;
+        }
+
         if (itemContainer != null && itemContainer.isEmpty() && !canDestroy) {
             player.sendMessage(Message.raw("This gravestone is empty!"));
             return false;

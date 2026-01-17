@@ -9,7 +9,7 @@
   ],
   "Icon": "Icons/ItemsGenerated/Gravestone.png",
   "BlockType": {
-    "Material": "Empty",
+    "Material": "Solid",
     "Opacity": "Transparent",
     "DrawType": "Model",
     "State": {
@@ -17,12 +17,6 @@
       "Capacity": 1
     },
     "VariantRotation": "NESW",
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "Rocks",
-        "ItemId": "Gravestone"
-      }
-    },
     "CustomModel": "Blocks/Gravestone/Gravestone.blockymodel",
     "CustomModelTexture": [
       {
@@ -34,7 +28,10 @@
       "Primary": "Break_Container",
       "Use": "Open_Container"
     },
-    "CubeShadingMode": "Fullbright"
+    "CubeShadingMode": "Fullbright",
+    "Gathering": {
+      "Soft": {}
+    }
   },
   "IconProperties": {
     "Scale": 0.55,
