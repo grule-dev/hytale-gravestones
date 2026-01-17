@@ -1,13 +1,11 @@
 package com.github.grule.gravestones.data;
 
-import com.github.grule.gravestones.Gravestones;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.*;
 import com.hypixel.hytale.event.EventPriority;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
@@ -19,7 +17,6 @@ import com.hypixel.hytale.server.core.entity.entities.player.windows.WindowManag
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
-import com.hypixel.hytale.server.core.inventory.container.filter.FilterType;
 import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -29,6 +26,7 @@ import com.hypixel.hytale.server.core.universe.world.meta.state.*;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
+import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -394,7 +392,7 @@ public class GravestoneState extends ItemContainerState
         return this.dynamicCapacity;
     }
 
-    public void setNameplateUUID(UUID nameplateUUID) {
+    public void setNameplateUUID(@NullableDecl UUID nameplateUUID) {
         this.nameplateUUID = nameplateUUID;
     }
 

@@ -145,9 +145,9 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
                     deathTime);
             // Re-obtain an entity store inside async world context
             var entityStore = world.getEntityStore().getStore();
-            Holder<EntityStore>[] drops = ItemComponent.generateItemDrops(store, itemsToDrop,
+            Holder<EntityStore>[] drops = ItemComponent.generateItemDrops(entityStore, itemsToDrop,
                     position.clone().add(0.0F, 1.0F, 0.0F), headRotation);
-            world.getEntityStore().getStore().addEntities(drops, AddReason.SPAWN);
+            entityStore.addEntities(drops, AddReason.SPAWN);
         });
     }
 
