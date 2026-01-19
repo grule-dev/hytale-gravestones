@@ -1,5 +1,6 @@
 package com.github.grule.gravestones.data;
 
+import com.github.grule.gravestones.Gravestones;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -10,6 +11,7 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.StateData;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.windows.ContainerBlockWindow;
@@ -129,11 +131,27 @@ public class GravestoneState extends ItemContainerState
     }
 
     @Override
-    public boolean initialize(@Nonnull BlockType blockType) {
-        if (!super.initialize(blockType)) {
-            return false;
+    public void onItemChange(ItemContainer.ItemContainerChangeEvent event) {
+        Gravestones.get().getLogger().at(Level.INFO).log("onItemChange: " + event.container().countItemStacks(item -> !item.isEmpty()) + " slots");
+
+        // Check if container is now empty
+        assert this.itemContainer != null;
+        if (this.itemContainer.isEmpty()) {
+            WorldChunk chunk = this.getChunk();
+            if (chunk == null) return;
+
+            World world = chunk.getWorld();
+            Vector3i pos = this.getBlockPosition();
+
+            // Execute on world thread for safety
+            world.execute(() -> world.breakBlock(pos.x, pos.y, pos.z, 0));
         }
 
+        this.markNeedsSave();
+    }
+
+    @Override
+    public boolean initialize(@Nonnull BlockType blockType) {
         // Determine capacity: use dynamic if set, otherwise use StateData
         short capacity;
         if (this.dynamicCapacity > 0) {
@@ -141,14 +159,13 @@ public class GravestoneState extends ItemContainerState
             capacity = this.dynamicCapacity;
         } else {
             // Fall back to StateData capacity (for manually placed blocks)
-            if (blockType.getState() instanceof ItemContainerStateData gravestoneStateData) {
+            if (blockType.getState() instanceof GravestoneStateData gravestoneStateData) {
                 capacity = gravestoneStateData.getCapacity();
             } else {
-                capacity = 0; // Default fallback
+                capacity = 1; // Default fallback
             }
         }
 
-        var previousContainer = this.itemContainer;
         // Ensure container has correct capacity
         List<ItemStack> remainder = new ObjectArrayList<>();
         this.itemContainer = ItemContainer.ensureContainerCapacity(
@@ -158,10 +175,7 @@ public class GravestoneState extends ItemContainerState
                 remainder
         );
 
-        if (this.itemContainer != previousContainer) {
-            // Only register if we got a new container
-            this.itemContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
-        }
+        this.itemContainer.registerChangeEvent(EventPriority.NORMAL, this::onItemChange);
 
         // Handle excess items (drop them if capacity is exceeded)
         if (!remainder.isEmpty()) {
@@ -297,11 +311,13 @@ public class GravestoneState extends ItemContainerState
         var player = playerRef.getStore().getComponent(playerRef, Player.getComponentType());
         assert player != null;
 
+        // if trying to destroy a non-empty gravestone, block it
         if (this.itemContainer != null && !this.itemContainer.isEmpty() && canDestroy && this.itemContainer.countItemStacks(item -> !item.isEmpty()) != 0) {
             player.sendMessage(Message.raw("This gravestone is not empty!"));
             return false;
         }
 
+        // if trying to open an empty gravestone, block it
         if (itemContainer != null && itemContainer.isEmpty() && !canDestroy) {
             player.sendMessage(Message.raw("This gravestone is empty!"));
             return false;
@@ -450,5 +466,33 @@ public class GravestoneState extends ItemContainerState
     @Nonnull
     public Map<UUID, ContainerBlockWindow> getWindows() {
         return this.windows;
+    }
+
+    public static class GravestoneStateData extends StateData {
+        public static final BuilderCodec<GravestoneStateData> CODEC = BuilderCodec.builder(
+                GravestoneStateData.class,
+                GravestoneStateData::new,
+                StateData.DEFAULT_CODEC
+        )
+                .appendInherited(
+                        new KeyedCodec<>("Capacity", Codec.INTEGER),
+                        (t, i) -> t.capacity = i.shortValue(),
+                        (t) -> Integer.valueOf(t.capacity),
+                        (o, p) -> o.capacity = p.capacity)
+                .add()
+                .build();
+        private short capacity = 20;
+
+        protected GravestoneStateData() {
+        }
+
+        public short getCapacity() {
+            return this.capacity;
+        }
+
+        @Nonnull
+        public String toString() {
+            return "GravestoneStateData{capacity=" + this.capacity + "} " + super.toString();
+        }
     }
 }

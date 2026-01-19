@@ -14,7 +14,7 @@
     "DrawType": "Model",
     "State": {
       "Id": "Gravestone",
-      "Capacity": 1
+      "Capacity": 63
     },
     "VariantRotation": "NESW",
     "CustomModel": "Blocks/Gravestone/Gravestone.blockymodel",
@@ -30,7 +30,9 @@
     },
     "CubeShadingMode": "Fullbright",
     "Gathering": {
-      "Soft": {}
+      "Soft": {
+        "DropList": {}
+      }
     }
   },
   "IconProperties": {

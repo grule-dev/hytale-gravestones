@@ -4,7 +4,6 @@ import com.github.grule.gravestones.data.GravestoneState;
 import com.github.grule.gravestones.system.GravestoneDeathSystem;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerState;
 
 import javax.annotation.Nonnull;
 
@@ -23,8 +22,8 @@ public class Gravestones extends JavaPlugin {
                 GravestoneState.class,
                 "Gravestone",
                 GravestoneState.CODEC,
-                ItemContainerState.ItemContainerStateData.class,
-                ItemContainerState.ItemContainerStateData.CODEC
+                GravestoneState.GravestoneStateData.class,
+                GravestoneState.GravestoneStateData.CODEC
         );
         this.getEntityStoreRegistry().registerSystem(new GravestoneDeathSystem());
     }

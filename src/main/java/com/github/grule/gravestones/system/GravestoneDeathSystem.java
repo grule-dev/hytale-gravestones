@@ -127,14 +127,14 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
         assert headRotationComponent != null;
         Vector3f headRotation = headRotationComponent.getRotation();
 
+        // Store reference data for async operation
+        String playerName = playerRef.getUsername();
+        java.util.UUID playerUUID = uuidComponent.getUuid();
+        long deathTime = System.currentTimeMillis();
+
         // Execute the item storage asynchronously on the world thread
         world.execute(() -> {
             world.setBlock(x, y, z, "Gravestone");
-
-            // Store reference data for async operation
-            String playerName = playerRef.getUsername();
-            java.util.UUID playerUUID = uuidComponent.getUuid();
-            long deathTime = System.currentTimeMillis();
 
             var itemsToDrop = setupGravestone(
                     world, x, y, z,
@@ -142,7 +142,9 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
                     playerRef,
                     playerUUID,
                     playerName,
-                    deathTime);
+                    deathTime
+            );
+
             // Re-obtain an entity store inside async world context
             var entityStore = world.getEntityStore().getStore();
             Holder<EntityStore>[] drops = ItemComponent.generateItemDrops(entityStore, itemsToDrop,
@@ -217,7 +219,7 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
             String playerName,
             long deathTime) {
         var errorMsg =
-                Message.translation("gravestones.create_gravestone.failed")
+                Message.translation("gravestones.message.create_gravestone.failed")
                         .color(Color.RED);
 
         // Get chunk and block reference
