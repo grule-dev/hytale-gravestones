@@ -1,6 +1,5 @@
 package com.github.grule.gravestones.data;
 
-import com.github.grule.gravestones.Gravestones;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -20,7 +19,7 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
 import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.permissions.PermissionsModule;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.meta.BlockState;
@@ -32,6 +31,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.awt.*;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,7 +44,7 @@ import java.util.logging.Level;
  */
 @SuppressWarnings({"removal", "deprecation"}) // Acknowledging BlockState deprecation
 public class GravestoneState extends ItemContainerState
-        implements ItemContainerBlockState, PlacedByBlockState, DestroyableBlockState, BreakValidatedBlockState {
+        implements ItemContainerBlockState, DestroyableBlockState, BreakValidatedBlockState {
 
     /**
      * Codec for serializing/deserializing GravestoneState
@@ -122,6 +122,9 @@ public class GravestoneState extends ItemContainerState
     @Nullable
     protected UUID nameplateUUID;
 
+    private static final Message NOT_OWNER_MESSAGE = Message.translation("gravestones.messages.access.not_owner").color(Color.RED);
+    private static final Message NOT_EMPTY_MESSAGE = Message.translation("gravestones.messages.access.not_empty").color(Color.RED);
+
     /**
      * Default constructor required for codec
      */
@@ -132,11 +135,8 @@ public class GravestoneState extends ItemContainerState
 
     @Override
     public void onItemChange(ItemContainer.ItemContainerChangeEvent event) {
-        Gravestones.get().getLogger().at(Level.INFO).log("onItemChange: " + event.container().countItemStacks(item -> !item.isEmpty()) + " slots");
-
         // Check if container is now empty
-        assert this.itemContainer != null;
-        if (this.itemContainer.isEmpty()) {
+        if (this.itemContainer == null || this.itemContainer.isEmpty() || this.itemContainer.countItemStacks(item -> !item.isEmpty()) == 0) {
             WorldChunk chunk = this.getChunk();
             if (chunk == null) return;
 
@@ -175,7 +175,7 @@ public class GravestoneState extends ItemContainerState
                 remainder
         );
 
-        this.itemContainer.registerChangeEvent(EventPriority.NORMAL, this::onItemChange);
+        this.itemContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
 
         // Handle excess items (drop them if capacity is exceeded)
         if (!remainder.isEmpty()) {
@@ -218,12 +218,73 @@ public class GravestoneState extends ItemContainerState
             @Nonnull Ref<EntityStore> playerRef,
             @Nonnull ComponentAccessor<EntityStore> componentAccessor
     ) {
-        return hasPermission(playerRef, componentAccessor, false);
+        var player = playerRef.getStore().getComponent(playerRef, Player.getComponentType());
+        assert player != null;
+        var uuidComponent = componentAccessor.getComponent(
+                playerRef,
+                UUIDComponent.getComponentType()
+        );
+        assert uuidComponent != null;
+
+        // check if container is empty
+        if (this.itemContainer == null || this.itemContainer.isEmpty() || this.itemContainer.countItemStacks(item -> !item.isEmpty()) == 0) {
+            this.destroyBlockWhenEmpty();
+            return false;
+        }
+
+        if (this.ownerUUID == null) {
+            return true;
+        }
+
+        if (uuidComponent.getUuid().equals(this.ownerUUID)) {
+            return true;
+        }
+
+        if (this.allowOthersAccess) {
+            return true;
+        }
+
+        if (PermissionsModule.get().hasPermission(uuidComponent.getUuid(), "gravestones.access_any")) {
+            return true;
+        }
+
+        player.sendMessage(NOT_OWNER_MESSAGE.param("owner", this.ownerName != null ? this.ownerName : "someone else"));
+        return false;
     }
 
     @Override
     public boolean canDestroy(@NonNullDecl Ref<EntityStore> playerRef, @NonNullDecl ComponentAccessor<EntityStore> componentAccessor) {
-        return hasPermission(playerRef, componentAccessor, true);
+        var player = playerRef.getStore().getComponent(playerRef, Player.getComponentType());
+        assert player != null;
+        var uuidComponent = componentAccessor.getComponent(
+                playerRef,
+                UUIDComponent.getComponentType()
+        );
+        assert uuidComponent != null;
+
+        // check if container is empty
+        if (this.itemContainer == null || this.itemContainer.isEmpty() || this.itemContainer.countItemStacks(item -> !item.isEmpty()) == 0) {
+            return true;
+        }
+
+        if (this.ownerUUID == null) {
+            return true;
+        }
+
+        if (uuidComponent.getUuid().equals(this.ownerUUID)) {
+            return true;
+        }
+
+        if (this.allowOthersAccess) {
+            return true;
+        }
+
+        if (PermissionsModule.get().hasPermission(uuidComponent.getUuid(), "gravestones.destroy_any")) {
+            return true;
+        }
+
+        player.sendMessage(NOT_EMPTY_MESSAGE);
+        return false;
     }
 
     /**
@@ -237,7 +298,7 @@ public class GravestoneState extends ItemContainerState
 
         var chunk = this.getChunk();
         assert chunk != null;
-        var world = this.getChunk().getWorld();
+        var world = chunk.getWorld();
         var store = world.getEntityStore().getStore();
 
         // Drop all items
@@ -271,92 +332,20 @@ public class GravestoneState extends ItemContainerState
         });
     }
 
-    /**
-     * Called when a player places this gravestone block.
-     * Captures the placer's UUID as the owner.
-     */
-    @Override
-    public void placedBy(
-            @Nonnull Ref<EntityStore> playerRef,
-            @Nonnull String blockTypeKey,
-            @Nonnull BlockState blockState,
-            @Nonnull ComponentAccessor<EntityStore> componentAccessor
-    ) {
-        // Get player UUID
-        UUIDComponent uuidComponent = componentAccessor.getComponent(
-                playerRef,
-                UUIDComponent.getComponentType()
-        );
-        if (uuidComponent != null) {
-            this.ownerUUID = uuidComponent.getUuid();
-        }
+    private void destroyBlockWhenEmpty() {
+        WorldChunk chunk = this.getChunk();
+        if (chunk == null) return;
 
-        // Get player name
-        PlayerRef playerRefComponent = componentAccessor.getComponent(
-                playerRef,
-                PlayerRef.getComponentType()
-        );
-        if (playerRefComponent != null) {
-            this.ownerName = playerRefComponent.getUsername();
-        }
+        World world = chunk.getWorld();
+        Vector3i pos = this.getBlockPosition();
+
+        world.execute(() -> {
+            // Even though the block is indestructible,
+            // you can still destroy it programmatically
+            world.breakBlock(pos.x, pos.y, pos.z, 0);
+        });
 
         this.markNeedsSave();
-    }
-
-    private boolean hasPermission(
-            @Nonnull Ref<EntityStore> playerRef,
-            @Nonnull ComponentAccessor<EntityStore> componentAccessor,
-            boolean canDestroy
-    ) {
-        var player = playerRef.getStore().getComponent(playerRef, Player.getComponentType());
-        assert player != null;
-
-        // if trying to destroy a non-empty gravestone, block it
-        if (this.itemContainer != null && !this.itemContainer.isEmpty() && canDestroy && this.itemContainer.countItemStacks(item -> !item.isEmpty()) != 0) {
-            player.sendMessage(Message.raw("This gravestone is not empty!"));
-            return false;
-        }
-
-        // if trying to open an empty gravestone, block it
-        if (itemContainer != null && itemContainer.isEmpty() && !canDestroy) {
-            player.sendMessage(Message.raw("This gravestone is empty!"));
-            return false;
-        }
-
-        // If no owner is set, anyone can open (shouldn't happen normally)
-        if (this.ownerUUID == null) {
-            return true;
-        }
-
-        // If others are allowed to access, let them in
-        if (this.allowOthersAccess) {
-            return true;
-        }
-
-        // Check if the player opening is the owner
-        UUIDComponent uuidComponent = componentAccessor.getComponent(
-                playerRef,
-                UUIDComponent.getComponentType()
-        );
-
-        assert uuidComponent != null;
-
-        boolean isOwner = this.ownerUUID.equals(uuidComponent.getUuid());
-
-        // Send message if not owner
-        if (!isOwner) {
-            PlayerRef playerRefComponent = componentAccessor.getComponent(
-                    playerRef,
-                    PlayerRef.getComponentType()
-            );
-            if (playerRefComponent != null) {
-                playerRefComponent.sendMessage(
-                        Message.raw("This gravestone belongs to " + (this.ownerName != null ? this.ownerName : "someone else") + "!")
-                );
-            }
-        }
-
-        return isOwner;
     }
 
     // ===== GETTERS AND SETTERS =====
@@ -442,7 +431,7 @@ public class GravestoneState extends ItemContainerState
 
         // Create new container with exact capacity
         this.itemContainer = new SimpleItemContainer(capacity);
-        this.itemContainer.registerChangeEvent(EventPriority.LAST, _ -> this.markNeedsSave());
+        this.itemContainer.registerChangeEvent(EventPriority.LAST, this::onItemChange);
 
         // Restore items if any
         for (int i = 0; i < existingItems.size() && i < capacity; i++) {

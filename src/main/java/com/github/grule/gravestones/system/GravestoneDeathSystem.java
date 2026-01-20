@@ -134,10 +134,13 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
 
         // Execute the item storage asynchronously on the world thread
         world.execute(() -> {
-            world.setBlock(x, y, z, "Gravestone");
+            // clamps gravestone between bedrock and top world layers
+            var posY = Math.clamp(y, 3, 319);
+            world.breakBlock(x, posY, z, 0);
+            world.setBlock(x, posY, z, "Gravestone");
 
             var itemsToDrop = setupGravestone(
-                    world, x, y, z,
+                    world, x, posY, z,
                     itemsLost,
                     playerRef,
                     playerUUID,
@@ -219,7 +222,7 @@ public class GravestoneDeathSystem extends DeathSystems.OnDeathSystem {
             String playerName,
             long deathTime) {
         var errorMsg =
-                Message.translation("gravestones.message.create_gravestone.failed")
+                Message.translation("gravestones.messages.create_gravestone.failed")
                         .color(Color.RED);
 
         // Get chunk and block reference

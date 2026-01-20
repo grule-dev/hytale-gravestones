@@ -10,7 +10,7 @@
   "Icon": "Icons/ItemsGenerated/Gravestone.png",
   "BlockType": {
     "Material": "Solid",
-    "Opacity": "Transparent",
+    "Opacity": "Solid",
     "DrawType": "Model",
     "State": {
       "Id": "Gravestone",
@@ -28,12 +28,7 @@
       "Primary": "Break_Container",
       "Use": "Open_Container"
     },
-    "CubeShadingMode": "Fullbright",
-    "Gathering": {
-      "Soft": {
-        "DropList": {}
-      }
-    }
+    "CubeShadingMode": "Fullbright"
   },
   "IconProperties": {
     "Scale": 0.55,
