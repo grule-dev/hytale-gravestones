@@ -226,6 +226,10 @@ public class GravestoneState extends ItemContainerState
         );
         assert uuidComponent != null;
 
+        if (PermissionsModule.get().hasPermission(uuidComponent.getUuid(), "gravestones.access_any")) {
+            return true;
+        }
+
         // check if container is empty
         if (this.itemContainer == null || this.itemContainer.isEmpty() || this.itemContainer.countItemStacks(item -> !item.isEmpty()) == 0) {
             this.destroyBlockWhenEmpty();
@@ -244,10 +248,6 @@ public class GravestoneState extends ItemContainerState
             return true;
         }
 
-        if (PermissionsModule.get().hasPermission(uuidComponent.getUuid(), "gravestones.access_any")) {
-            return true;
-        }
-
         player.sendMessage(NOT_OWNER_MESSAGE.param("owner", this.ownerName != null ? this.ownerName : "someone else"));
         return false;
     }
@@ -261,6 +261,11 @@ public class GravestoneState extends ItemContainerState
                 UUIDComponent.getComponentType()
         );
         assert uuidComponent != null;
+
+        if (PermissionsModule.get().hasPermission(uuidComponent.getUuid(), "gravestones.destroy_any")) {
+            this.destroyBlockWhenEmpty();
+            return true;
+        }
 
         // check if container is empty
         if (this.itemContainer == null || this.itemContainer.isEmpty() || this.itemContainer.countItemStacks(item -> !item.isEmpty()) == 0) {
@@ -276,10 +281,6 @@ public class GravestoneState extends ItemContainerState
         }
 
         if (this.allowOthersAccess) {
-            return true;
-        }
-
-        if (PermissionsModule.get().hasPermission(uuidComponent.getUuid(), "gravestones.destroy_any")) {
             return true;
         }
 
